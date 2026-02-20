@@ -30,20 +30,47 @@ const LeadForm = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = schema.safeParse(formData);
-    if (!result.success) {
-      const newErrors: Errors = {};
-      result.error.issues.forEach((issue) => {
-        const key = issue.path[0] as keyof FormData;
-        newErrors[key] = issue.message;
-      });
-      setErrors(newErrors);
-      return;
-    }
-    setSubmitted(true);
-  };
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPBKiZ7gX2vgUOzEnSJ2sBVat_D7nSY25bmJJGQSbFlv1EzkhT91eSCvNOx5UinUAH0Q/exec";
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const result = schema.safeParse(formData);
+
+  if (!result.success) {
+    const newErrors: Errors = {};
+    result.error.issues.forEach((issue) => {
+      const key = issue.path[0] as keyof FormData;
+      newErrors[key] = issue.message;
+    });
+    setErrors(newErrors);
+    return;
+  }
+
+try {
+  const form = new FormData();
+
+  // IMPORTANT: use the correct field name from your formData
+  form.append("fullName", (formData.fullName ?? formData.name ?? "").toString());
+  form.append("whatsapp", (formData.whatsapp ?? "").toString());
+  form.append("city", (formData.city ?? "").toString());
+  form.append("email", (formData.email ?? "").toString());
+  form.append("pageUrl", window.location.href);
+
+  await fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: form,
+  });
+
+  setSubmitted(true);
+} catch (error) {
+  console.error("Submission error:", error);
+  alert("Something went wrong. Please try again.");
+}
+
+};
+
 
   const fields = [
     { name: "name" as const, label: "Full Name", type: "text", placeholder: "Your full name" },
